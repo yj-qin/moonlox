@@ -1,13 +1,31 @@
 ///|
-fn padding_prefix(num : Int, count : Int, content~ : String = " ") -> String {
-  let mut n = num.to_string()
-  let len = n.length()
+fn padding_prefix(str : String, count : Int, content~ : String = " ") -> String {
+  let sb = StringBuilder::new()
+  let len = str.length()
   if len < count {
     for i in 0..<(count - len) {
-      n = content + n
+      sb.write_string(content)
     }
   }
-  n
+  sb.write_string(str)
+  sb.to_string()
+}
+
+///|
+fn padding_postfix(
+  str : String,
+  count : Int,
+  content~ : String = " "
+) -> String {
+  let sb = StringBuilder::new()
+  let len = str.length()
+  sb.write_string(str)
+  if len < count {
+    for i in 0..<(count - len) {
+      sb.write_string(content)
+    }
+  }
+  sb.to_string()
 }
 
 ///|

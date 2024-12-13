@@ -2,12 +2,15 @@
 fn __read_char() -> Int = "__moonbit_io_unstable" "read_char"
 
 ///|
-fn read_char() -> Char? {
+fn __now() -> UInt64 = "__moonbit_time_unstable" "now"
+
+///|
+pub fn read_char() -> Char? {
   Some(Char::from_int(__read_char()))
 }
 
 ///|
-fn read_line_from_stdin() -> String? {
+pub fn read_line_from_stdin() -> String? {
   let buf = StringBuilder::new()
   while true {
     let c = read_char()
@@ -21,4 +24,9 @@ fn read_line_from_stdin() -> String? {
     }
   }
   Some(buf.to_string())
+}
+
+///|
+pub fn now() -> UInt64 {
+  __now()
 }

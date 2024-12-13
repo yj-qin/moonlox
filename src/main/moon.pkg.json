@@ -1,7 +1,7 @@
 {
   "is-main": true,
   "import": [
-    "moonlox/lib",
+    "yj-qin/moonlox/lib",
     "moonbitlang/x/sys",
     "moonbitlang/x/fs"
   ]

@@ -1,0 +1,73 @@
+class Mandelbrot {
+    init(width, height) {
+        this.width = width;
+        this.height = height;
+        this.maxIter = 1000;
+        this.xMin = -2.0;
+        this.xMax = 1.0;
+        this.yMin = -1.0;
+        this.yMax = 1.0;
+    }
+
+    draw() {
+        for (var y = 0; y < this.height; y = y + 1) {
+            var line = "";
+            for (var x = 0; x < this.width; x = x + 1) {
+                var cx = this.xMin + (this.xMax - this.xMin) * x / (this.width - 1);
+                var cy = this.yMin + (this.yMax - this.yMin) * y / (this.height - 1);
+                
+                var zx = 0;
+                var zy = 0;
+
+                var iter = 0;
+                while (zx * zx + zy * zy < 4.0 and iter < this.maxIter) {
+                    var temp = zx * zx - zy * zy + cx;
+                    zy = 2.0 * zx * zy + cy;
+                    zx = temp;
+                    iter = iter + 1;
+                }
+
+                if (iter < this.maxIter) {
+                    line = line + this.getChar(iter);
+                } else {
+                    line = line + " ";
+                }
+            }
+            print line;
+        }
+    }
+
+    getChar(iter) {
+        var i = iter % 12;
+        if (i == 0) {
+            return ".";
+        } else if (i == 1) {
+            return ",";
+        } else if (i == 2) {
+            return "-";
+        } else if (i == 3) {
+            return "~";
+        } else if (i == 4) {
+            return ":";
+        } else if (i == 5) {
+            return ";";
+        } else if (i == 6) {
+            return "=";
+        } else if (i == 7) {
+            return "!";
+        } else if (i == 8) {
+            return "*";
+        } else if (i == 9) {
+            return "#";
+        } else if (i == 10) {
+            return "$";
+        } else {
+            return "@";
+        }
+    }
+}
+
+var mandelbrot = Mandelbrot(150, 50);
+var start = clock();
+mandelbrot.draw();
+print clock() - start;

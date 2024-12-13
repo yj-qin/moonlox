@@ -12,6 +12,7 @@ enum TokenKind {
   Semicolon
   Slash
   Star
+  Percent
   // One or two character tokens
   Bang
   BangEqual
@@ -54,6 +55,21 @@ struct Token {
   start : Int
   length : Int
   line : Int
+} derive(Show, Eq)
+
+///|
+fn Token::dummy() -> Token {
+  { kind: EOF, str: "", start: 0, length: 0, line: 0 }
+}
+
+///|
+fn Token::this() -> Token {
+  { kind: This, str: "this", start: 0, length: 4, line: 0 }
+}
+
+///|
+fn Token::synthetic(str : String) -> Token {
+  { kind: Nil, str, start: 0, length: str.length(), line: 0 }
 }
 
 ///|
@@ -101,7 +117,7 @@ fn scan(self : Scanner) -> Token {
     return self.identifier()
   }
   if is_digit(Some(c)) {
-    return self.number()
+    return self.num()
   }
   match c {
     '(' => self.make_token(LeftParen)
@@ -115,17 +131,18 @@ fn scan(self : Scanner) -> Token {
     '-' => self.make_token(Minus)
     '*' => self.make_token(Star)
     '/' => self.make_token(Slash)
+    '%' => self.make_token(Percent)
     '!' => self.make_token(if self.eat('=') { BangEqual } else { Bang })
     '=' => self.make_token(if self.eat('=') { EqualEqual } else { Equal })
     '<' => self.make_token(if self.eat('=') { LessEqual } else { Less })
     '>' => self.make_token(if self.eat('=') { GreaterEqual } else { Greater })
-    '"' => self.string()
+    '"' => self.str()
     _ => self.error_token("Unexpected character.")
   }
 }
 
 ///|
-fn peek(self : Scanner) -> Char? {
+fn Scanner::peek(self : Scanner) -> Char? {
   if self.is_at_end() {
     None
   } else {
@@ -178,7 +195,7 @@ fn skip_whitespace(self : Scanner) -> Unit {
         match self.peek_next() {
           Some('/') =>
             // A comment goes until the end of the line.
-            while self.peek() != Some('\n') && self.is_at_end().not() {
+            while self.peek() != Some('\n') && not(self.is_at_end()) {
               self.cur += 1
             }
           _ => return
@@ -189,8 +206,8 @@ fn skip_whitespace(self : Scanner) -> Unit {
 }
 
 ///|
-fn string(self : Scanner) -> Token {
-  while self.peek() != Some('"') && self.is_at_end().not() {
+fn str(self : Scanner) -> Token {
+  while self.peek() != Some('"') && not(self.is_at_end()) {
     if self.peek() == Some('\n') {
       self.line += 1
     }
@@ -206,7 +223,7 @@ fn string(self : Scanner) -> Token {
 }
 
 ///|
-fn number(self : Scanner) -> Token {
+fn num(self : Scanner) -> Token {
   while is_digit(self.peek()) {
     self.cur += 1
   }
@@ -237,9 +254,14 @@ fn identifier_type(self : Scanner) -> TokenKind {
 
 ///|
 fn make_token(self : Scanner, kind : TokenKind) -> Token {
+  let str = if kind == String {
+    self.source.substring(start=self.start + 1, end=self.cur - 1)
+  } else {
+    self.source.substring(start=self.start, end=self.cur)
+  }
   {
     kind,
-    str: self.source.substring(start=self.start, end=self.cur),
+    str,
     start: self.start,
     length: self.cur - self.start,
     line: self.line,

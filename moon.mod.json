@@ -1,12 +1,12 @@
 {
-  "name": "moonlox",
+  "name": "yj-qin/moonlox",
   "version": "0.1.0",
   "deps": {
-    "moonbitlang/x": "0.4.13"
+    "moonbitlang/x": "0.4.15"
   },
   "readme": "README.md",
-  "repository": "",
-  "license": "Apache-2.0",
+  "repository": "https://github.com/yj-qin/moonlox",
+  "license": "MIT",
   "keywords": [],
   "description": "",
   "source": "src"

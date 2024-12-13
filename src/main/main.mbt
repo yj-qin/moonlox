@@ -1,5 +1,5 @@
 ///|
-const DEBUG_MODE = true
+const DEBUG_MODE = false
 
 ///|
 fn main {
@@ -21,7 +21,7 @@ fn repl() -> Unit {
   println("REPL mode, press Ctrl + C to exit.")
   for {
     println(">> ")
-    match read_line_from_stdin() {
+    match @lib.read_line_from_stdin() {
       Some(line) => {
         let _ = vm.interpret(line)
 
@@ -36,7 +36,7 @@ fn repl() -> Unit {
 
 ///|
 fn runFile(path : String) -> Unit {
-  let vm = @lib.VM::new()
+  let vm = @lib.VM::new(debug=DEBUG_MODE)
   let source = try {
     @fs.read_file_to_string!(path~)
   } catch {
