@@ -3,7 +3,7 @@ const DEBUG_MODE = false
 
 ///|
 fn main {
-  let argv = @sys.get_cli_args()[2:]
+  let argv = @sys.get_cli_args()[1:]
   let argc = argv.length()
   match argc {
     0 => repl()
@@ -38,7 +38,7 @@ fn repl() -> Unit {
 fn runFile(path : String) -> Unit {
   let vm = @lib.VM::new(debug=DEBUG_MODE)
   let source = try {
-    @fs.read_file_to_string!(path~)
+    @fs.read_file_to_string(path)
   } catch {
     _ => abort("Read file error")
   }

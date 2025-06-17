@@ -1,5 +1,5 @@
 ///|
-enum FunctionKind {
+priv enum FunctionKind {
   Function
   Method
   Initializer
@@ -7,7 +7,7 @@ enum FunctionKind {
 } derive(Show, Eq)
 
 ///|
-struct Function {
+priv struct Function {
   mut arity : Int
   name : String
   mut upvalue_count : Int
@@ -25,7 +25,7 @@ impl Eq for Function with op_equal(self, other) {
 }
 
 ///|
-struct NativeFunction {
+priv struct NativeFunction {
   name : String
   arity : Int
   function : (Int, FixedArray[Value]) -> Value
@@ -37,7 +37,7 @@ impl Eq for NativeFunction with op_equal(self, other) {
 }
 
 ///|
-struct Closure {
+priv struct Closure {
   function : Function
   upvalues : FixedArray[Upval?]
   upvalue_count : Int
@@ -51,14 +51,14 @@ fn Closure::new(function : Function) -> Closure {
 }
 
 ///|
-struct Upval {
+priv struct Upval {
   mut location : Int
   mut next : Upval?
   mut closed : Value
 } derive(Eq)
 
 ///|
-struct Class {
+priv struct Class {
   name : String
   methods : Map[String, Value]
 } derive(Eq)
@@ -69,18 +69,18 @@ fn Class::new(name : String) -> Class {
 }
 
 ///|
-struct Instance {
-  class : Class
+priv struct Instance {
+  clazz : Class
   fields : Map[String, Value]
 } derive(Eq)
 
 ///|
-fn Instance::new(class : Class) -> Instance {
-  { class, fields: {} }
+fn Instance::new(clazz : Class) -> Instance {
+  { clazz, fields: {} }
 }
 
 ///|
-struct BoundMethod {
+priv struct BoundMethod {
   receiver : Value
   mthd : Closure
 } derive(Eq)
@@ -124,7 +124,7 @@ pub impl Show for Value with output(self, logger) {
     NativeFunctionVal(f) => logger.write_string("<native fn \{f.name}>")
     ClosureVal(c) => print_function(logger, c.function)
     ClassVal(c) => logger.write_string(c.name)
-    InstanceVal(i) => logger.write_string("\{i.class.name} instance")
+    InstanceVal(i) => logger.write_string("\{i.clazz.name} instance")
     BoundMethodVal(m) => print_function(logger, m.mthd.function)
   }
 }
@@ -139,7 +139,7 @@ fn print_function(logger : &Logger, function : Function) -> Unit {
 }
 
 ///|
-struct ValueArray {
+priv struct ValueArray {
   values : Array[Value]
 } derive(Show)
 

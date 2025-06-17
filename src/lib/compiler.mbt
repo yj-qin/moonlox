@@ -8,7 +8,7 @@ const MAX_UPVALUE_COUNT = 256
 const MAX_JUMP = 65535
 
 ///|
-struct CompileState {
+priv struct CompileState {
   enclosing : CompileState?
   function : Function
   function_kind : FunctionKind
@@ -47,13 +47,13 @@ fn CompileState::new(
 }
 
 ///|
-struct ClassCompileState {
+priv struct ClassCompileState {
   enclosing : ClassCompileState?
   mut has_super : Bool
 }
 
 ///|
-struct Compiler {
+priv struct Compiler {
   scanner : Scanner
   parser : Parser
   mut current : CompileState
@@ -63,14 +63,14 @@ struct Compiler {
 }
 
 ///|
-struct Local {
+priv struct Local {
   name : Token
   mut depth : Int
   mut is_captured : Bool
 } derive(Show)
 
 ///|
-struct Upvalue {
+priv struct Upvalue {
   index : Int
   is_local : Bool
 } derive(Show)
@@ -130,10 +130,10 @@ fn end_function(self : Compiler) -> Function {
 //
 
 ///|
-typealias Precedence = Int
+typealias Int as Precedence 
 
 ///|
-typealias ParseFn = (Compiler, Bool) -> Unit
+typealias (Compiler, Bool) -> Unit as ParseFn
 
 ///|
 const PREC_NONE = 0
@@ -169,7 +169,7 @@ const PREC_CALL = 9
 //const PREC_PRIMARY = 10
 
 ///|
-struct Parser {
+priv struct Parser {
   mut previous : Token
   mut current : Token
   mut had_error : Bool
@@ -183,7 +183,7 @@ fn Parser::new() -> Parser {
 }
 
 ///|
-struct ParseRule {
+priv struct ParseRule {
   prefix : ParseFn?
   infix : ParseFn?
   precedence : Precedence
@@ -201,43 +201,43 @@ fn ParseRule::new(
 ///|
 fn init_rules_table() -> Map[TokenKind, ParseRule] {
   let rules = {}
-  rules[LeftParen] = ParseRule::new(Some(grouping), Some(call), PREC_CALL)
+  rules[LeftParen] = ParseRule::new(Some(Compiler::grouping), Some(Compiler::call), PREC_CALL)
   rules[RightParen] = ParseRule::new(None, None, PREC_NONE)
   rules[LeftBrace] = ParseRule::new(None, None, PREC_NONE)
   rules[RightBrace] = ParseRule::new(None, None, PREC_NONE)
   rules[Comma] = ParseRule::new(None, None, PREC_NONE)
-  rules[Dot] = ParseRule::new(None, Some(dot), PREC_CALL)
-  rules[Minus] = ParseRule::new(Some(unary), Some(binary), PREC_TERM)
-  rules[Plus] = ParseRule::new(None, Some(binary), PREC_TERM)
+  rules[Dot] = ParseRule::new(None, Some(Compiler::dot), PREC_CALL)
+  rules[Minus] = ParseRule::new(Some(Compiler::unary), Some(Compiler::binary), PREC_TERM)
+  rules[Plus] = ParseRule::new(None, Some(Compiler::binary), PREC_TERM)
   rules[Semicolon] = ParseRule::new(None, None, PREC_NONE)
-  rules[Slash] = ParseRule::new(None, Some(binary), PREC_FACTOR)
-  rules[Star] = ParseRule::new(None, Some(binary), PREC_FACTOR)
-  rules[Percent] = ParseRule::new(None, Some(binary), PREC_FACTOR)
-  rules[Bang] = ParseRule::new(Some(unary), None, PREC_NONE)
-  rules[BangEqual] = ParseRule::new(None, Some(binary), PREC_EQUALITY)
+  rules[Slash] = ParseRule::new(None, Some(Compiler::binary), PREC_FACTOR)
+  rules[Star] = ParseRule::new(None, Some(Compiler::binary), PREC_FACTOR)
+  rules[Percent] = ParseRule::new(None, Some(Compiler::binary), PREC_FACTOR)
+  rules[Bang] = ParseRule::new(Some(Compiler::unary), None, PREC_NONE)
+  rules[BangEqual] = ParseRule::new(None, Some(Compiler::binary), PREC_EQUALITY)
   rules[Equal] = ParseRule::new(None, None, PREC_NONE)
-  rules[EqualEqual] = ParseRule::new(None, Some(binary), PREC_EQUALITY)
-  rules[Greater] = ParseRule::new(None, Some(binary), PREC_COMPARISON)
-  rules[GreaterEqual] = ParseRule::new(None, Some(binary), PREC_COMPARISON)
-  rules[Less] = ParseRule::new(None, Some(binary), PREC_COMPARISON)
-  rules[LessEqual] = ParseRule::new(None, Some(binary), PREC_COMPARISON)
-  rules[Identifier] = ParseRule::new(Some(variable), None, PREC_NONE)
-  rules[String] = ParseRule::new(Some(string), None, PREC_NONE)
-  rules[Number] = ParseRule::new(Some(number), None, PREC_NONE)
-  rules[And] = ParseRule::new(None, Some(and), PREC_AND)
+  rules[EqualEqual] = ParseRule::new(None, Some(Compiler::binary), PREC_EQUALITY)
+  rules[Greater] = ParseRule::new(None, Some(Compiler::binary), PREC_COMPARISON)
+  rules[GreaterEqual] = ParseRule::new(None, Some(Compiler::binary), PREC_COMPARISON)
+  rules[Less] = ParseRule::new(None, Some(Compiler::binary), PREC_COMPARISON)
+  rules[LessEqual] = ParseRule::new(None, Some(Compiler::binary), PREC_COMPARISON)
+  rules[Identifier] = ParseRule::new(Some(Compiler::variable), None, PREC_NONE)
+  rules[String] = ParseRule::new(Some(Compiler::string), None, PREC_NONE)
+  rules[Number] = ParseRule::new(Some(Compiler::number), None, PREC_NONE)
+  rules[And] = ParseRule::new(None, Some(Compiler::and_), PREC_AND)
   rules[Class] = ParseRule::new(None, None, PREC_NONE)
   rules[Else] = ParseRule::new(None, None, PREC_NONE)
-  rules[False] = ParseRule::new(Some(literal), None, PREC_NONE)
+  rules[False] = ParseRule::new(Some(Compiler::literal), None, PREC_NONE)
   rules[For] = ParseRule::new(None, None, PREC_NONE)
   rules[Fun] = ParseRule::new(None, None, PREC_NONE)
   rules[If] = ParseRule::new(None, None, PREC_NONE)
-  rules[Nil] = ParseRule::new(Some(literal), None, PREC_NONE)
-  rules[Or] = ParseRule::new(None, Some(or), PREC_OR)
+  rules[Nil] = ParseRule::new(Some(Compiler::literal), None, PREC_NONE)
+  rules[Or] = ParseRule::new(None, Some(Compiler::or), PREC_OR)
   rules[Print] = ParseRule::new(None, None, PREC_NONE)
   rules[Return] = ParseRule::new(None, None, PREC_NONE)
-  rules[Super] = ParseRule::new(Some(super_), None, PREC_NONE)
-  rules[This] = ParseRule::new(Some(this_), None, PREC_NONE)
-  rules[True] = ParseRule::new(Some(literal), None, PREC_NONE)
+  rules[Super] = ParseRule::new(Some(Compiler::super_), None, PREC_NONE)
+  rules[This] = ParseRule::new(Some(Compiler::this_), None, PREC_NONE)
+  rules[True] = ParseRule::new(Some(Compiler::literal), None, PREC_NONE)
   rules[Var] = ParseRule::new(None, None, PREC_NONE)
   rules[While] = ParseRule::new(None, None, PREC_NONE)
   rules[Error] = ParseRule::new(None, None, PREC_NONE)
@@ -249,7 +249,7 @@ fn init_rules_table() -> Map[TokenKind, ParseRule] {
 fn parse_precedence(self : Compiler, precedence : Precedence) -> Unit {
   self.advance()
   let prefix_rule = match
-    self.rules[self.parser.previous.kind].unwrap().prefix {
+    self.rules.get(self.parser.previous.kind).unwrap().prefix {
     Some(f) => f
     None => {
       self.error("Expect expression.")
@@ -258,9 +258,9 @@ fn parse_precedence(self : Compiler, precedence : Precedence) -> Unit {
   }
   let can_assign = precedence <= PREC_ASSIGNMENT
   prefix_rule(self, can_assign)
-  while precedence <= self.rules[self.parser.current.kind].unwrap().precedence {
+  while precedence <= self.rules.get(self.parser.current.kind).unwrap().precedence {
     self.advance()
-    let infix_rule = self.rules[self.parser.previous.kind].unwrap().infix.unwrap()
+    let infix_rule = self.rules.get(self.parser.previous.kind).unwrap().infix.unwrap()
     infix_rule(self, can_assign)
   }
   if can_assign && self.consume(Equal) {
@@ -270,7 +270,7 @@ fn parse_precedence(self : Compiler, precedence : Precedence) -> Unit {
 
 ///|
 fn parse_variable(self : Compiler, message : String) -> Int {
-  self.assert(Identifier, message)
+  self.assert_token(Identifier, message)
   self.declare_variable()
   if self.current.scope_depth > 0 {
     return 0
@@ -338,7 +338,7 @@ fn block(self : Compiler) -> Unit {
   while not(self.check(RightBrace)) && not(self.check(EOF)) {
     self.declaration()
   }
-  self.assert(RightBrace, "Expect '}' after block.")
+  self.assert_token(RightBrace, "Expect '}' after block.")
 }
 
 ///|
@@ -365,7 +365,7 @@ fn var_declaration(self : Compiler) -> Unit {
   } else {
     self.emit_byte(OP_NIL)
   }
-  self.assert(Semicolon, "Expect ';' after variable declaration.")
+  self.assert_token(Semicolon, "Expect ';' after variable declaration.")
   self.define_variable(global)
 }
 
@@ -386,7 +386,7 @@ fn function(self : Compiler, function_kind : FunctionKind) -> Unit {
   )
   self.current = state
   self.begin_scope()
-  self.assert(LeftParen, "Expect '(' after function name.")
+  self.assert_token(LeftParen, "Expect '(' after function name.")
   if not(self.check(RightParen)) {
     for {
       self.current.function.arity += 1
@@ -400,8 +400,8 @@ fn function(self : Compiler, function_kind : FunctionKind) -> Unit {
       }
     }
   }
-  self.assert(RightParen, "Expect ')' after parameters.")
-  self.assert(LeftBrace, "Expect '{' before function body.")
+  self.assert_token(RightParen, "Expect ')' after parameters.")
+  self.assert_token(LeftBrace, "Expect '{' before function body.")
   self.block()
   let function = self.end_function()
   self.emit_bytes(
@@ -417,7 +417,7 @@ fn function(self : Compiler, function_kind : FunctionKind) -> Unit {
 
 ///|
 fn class_declaration(self : Compiler) -> Unit {
-  self.assert(Identifier, "Expect class name.")
+  self.assert_token(Identifier, "Expect class name.")
   let class_name = self.parser.previous
   let name_constant = self.make_constant(StringVal(self.parser.previous.str))
   self.declare_variable()
@@ -427,7 +427,7 @@ fn class_declaration(self : Compiler) -> Unit {
   self.current_class = Some(class_state)
   // class inheritance
   if self.consume(Less) {
-    self.assert(Identifier, "Expect superclass name.")
+    self.assert_token(Identifier, "Expect superclass name.")
     self.variable(false)
     if identifier_equal(class_name, self.parser.previous) {
       self.error("A class can't inherit from itself.")
@@ -441,11 +441,11 @@ fn class_declaration(self : Compiler) -> Unit {
   }
   // load class for method binding
   self.named_variable(class_name, false)
-  self.assert(LeftBrace, "Expect '{' before class body.")
+  self.assert_token(LeftBrace, "Expect '{' before class body.")
   while not(self.check(RightBrace)) && not(self.check(EOF)) {
     self.mthd()
   }
-  self.assert(RightBrace, "Expect '}' after class body.")
+  self.assert_token(RightBrace, "Expect '}' after class body.")
   // pop class
   self.emit_byte(OP_POP)
   if class_state.has_super {
@@ -456,7 +456,7 @@ fn class_declaration(self : Compiler) -> Unit {
 
 ///|
 fn mthd(self : Compiler) -> Unit {
-  self.assert(Identifier, "Expect method name.")
+  self.assert_token(Identifier, "Expect method name.")
   let constant = self.make_constant(StringVal(self.parser.previous.str))
   let kind = if self.parser.previous.str == "init" {
     Initializer
@@ -491,7 +491,7 @@ fn statement(self : Compiler) -> Unit {
 ///|
 fn expression_statement(self : Compiler) -> Unit {
   self.expression()
-  self.assert(Semicolon, "Expect ';' after expression.")
+  self.assert_token(Semicolon, "Expect ';' after expression.")
   self.emit_byte(OP_POP)
 }
 
@@ -507,16 +507,16 @@ fn return_statement(self : Compiler) -> Unit {
       self.error("Can't return a value from an initializer.")
     }
     self.expression()
-    self.assert(Semicolon, "Expect ';' after return value.")
+    self.assert_token(Semicolon, "Expect ';' after return value.")
     self.emit_byte(OP_RETURN)
   }
 }
 
 ///|
 fn if_statement(self : Compiler) -> Unit {
-  self.assert(LeftParen, "Expect '(' after 'if'.")
+  self.assert_token(LeftParen, "Expect '(' after 'if'.")
   self.expression()
-  self.assert(RightParen, "Expect ')' after condition.")
+  self.assert_token(RightParen, "Expect ')' after condition.")
   let then_jump = self.emit_jump(OP_JUMP_IF_FALSE)
   self.emit_byte(OP_POP)
   self.statement()
@@ -532,9 +532,9 @@ fn if_statement(self : Compiler) -> Unit {
 ///|
 fn while_statement(self : Compiler) -> Unit {
   let loop_start = self.current_chunk().count
-  self.assert(LeftParen, "Expect '(' after 'while'.")
+  self.assert_token(LeftParen, "Expect '(' after 'while'.")
   self.expression()
-  self.assert(RightParen, "Expect ')' after condition.")
+  self.assert_token(RightParen, "Expect ')' after condition.")
   let exit_jump = self.emit_jump(OP_JUMP_IF_FALSE)
   self.emit_byte(OP_POP)
   self.statement()
@@ -546,7 +546,7 @@ fn while_statement(self : Compiler) -> Unit {
 ///|
 fn for_statement(self : Compiler) -> Unit {
   self.begin_scope()
-  self.assert(LeftParen, "Expect '(' after 'for'.")
+  self.assert_token(LeftParen, "Expect '(' after 'for'.")
   // Initializer clause
   if self.consume(Semicolon) {
     // No initializer.
@@ -560,7 +560,7 @@ fn for_statement(self : Compiler) -> Unit {
   let mut exit_jump = -1
   if not(self.consume(Semicolon)) {
     self.expression()
-    self.assert(Semicolon, "Expect ';' after loop condition.")
+    self.assert_token(Semicolon, "Expect ';' after loop condition.")
 
     // Jump out of the loop if the condition is false
     exit_jump = self.emit_jump(OP_JUMP_IF_FALSE)
@@ -572,7 +572,7 @@ fn for_statement(self : Compiler) -> Unit {
     let increment_start = self.current_chunk().count
     self.expression()
     self.emit_byte(OP_POP)
-    self.assert(RightParen, "Expect ')' after for clauses.")
+    self.assert_token(RightParen, "Expect ')' after for clauses.")
     self.emit_loop(loop_start)
     loop_start = increment_start
     self.patch_jump(body_jump)
@@ -589,7 +589,7 @@ fn for_statement(self : Compiler) -> Unit {
 ///|
 fn print_statement(self : Compiler) -> Unit {
   self.expression()
-  self.assert(Semicolon, "Expect ';' after value.")
+  self.assert_token(Semicolon, "Expect ';' after value.")
   self.emit_byte(OP_PRINT)
 }
 
@@ -611,7 +611,7 @@ fn unary(self : Compiler, _can_assign : Bool) -> Unit {
 ///|
 fn binary(self : Compiler, _can_assign : Bool) -> Unit {
   let operator = self.parser.previous.kind
-  let rule = self.rules[operator].unwrap()
+  let rule = self.rules.get(operator).unwrap()
   self.parse_precedence(rule.precedence + 1)
   match operator {
     BangEqual => self.emit_bytes(OP_EQUAL, OP_NOT)
@@ -637,7 +637,7 @@ fn call(self : Compiler, _can_assign : Bool) -> Unit {
 
 ///|
 fn dot(self : Compiler, can_assign : Bool) -> Unit {
-  self.assert(Identifier, "Expect property name after '.'.")
+  self.assert_token(Identifier, "Expect property name after '.'.")
   let name = self.make_constant(StringVal(self.parser.previous.str))
   if can_assign && self.consume(Equal) {
     self.expression()
@@ -666,7 +666,7 @@ fn argument_list(self : Compiler) -> Int {
       }
     }
   }
-  self.assert(RightParen, "Expect ')' after arguments.")
+  self.assert_token(RightParen, "Expect ')' after arguments.")
   arg_count
 }
 
@@ -683,7 +683,7 @@ fn literal(self : Compiler, _can_assign : Bool) -> Unit {
 ///|
 fn number(self : Compiler, _can_assign : Bool) -> Unit {
   let value = try {
-    @strconv.parse_double!(self.parser.previous.str)
+    @strconv.parse_double(self.parser.previous.str)
   } catch {
     StrConvError(_) => {
       self.error("Invalid number.")
@@ -719,8 +719,8 @@ fn super_(self : Compiler, _can_assign : Bool) -> Unit {
   } else if not(self.current_class.unwrap().has_super) {
     self.error("Can't use 'super' in a class with no superclass.")
   }
-  self.assert(Dot, "Expect '.' after 'super'.")
-  self.assert(Identifier, "Expect superclass method name.")
+  self.assert_token(Dot, "Expect '.' after 'super'.")
+  self.assert_token(Identifier, "Expect superclass method name.")
   let name = self.make_constant(StringVal(self.parser.previous.str))
   self.named_variable(Token::synthetic("this"), false)
   if self.consume(LeftParen) {
@@ -764,11 +764,11 @@ fn named_variable(self : Compiler, name : Token, can_assign : Bool) -> Unit {
 ///|
 fn grouping(self : Compiler, _can_assign : Bool) -> Unit {
   self.expression()
-  self.assert(RightParen, "Expect ')' after expression.")
+  self.assert_token(RightParen, "Expect ')' after expression.")
 }
 
 ///|
-fn and(self : Compiler, _can_assign : Bool) -> Unit {
+fn and_(self : Compiler, _can_assign : Bool) -> Unit {
   let end_jump = self.emit_jump(OP_JUMP_IF_FALSE)
   self.emit_byte(OP_POP)
   self.parse_precedence(PREC_AND)
@@ -824,7 +824,7 @@ fn check(self : Compiler, kind : TokenKind) -> Bool {
 }
 
 ///|
-fn assert(self : Compiler, kind : TokenKind, message : String) -> Unit {
+fn assert_token(self : Compiler, kind : TokenKind, message : String) -> Unit {
   if self.parser.current.kind == kind {
     self.advance()
   } else {

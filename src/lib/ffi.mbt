@@ -6,7 +6,7 @@ fn __now() -> UInt64 = "__moonbit_time_unstable" "now"
 
 ///|
 pub fn read_char() -> Char? {
-  Some(Char::from_int(__read_char()))
+  __read_char().to_char()
 }
 
 ///|

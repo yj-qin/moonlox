@@ -5,7 +5,7 @@ const FRAMES_MAX = 64
 const STACK_MAX = 16384
 
 ///|
-struct CallFrame {
+priv struct CallFrame {
   closure : Closure
   mut ip : Int
   slot : Int
@@ -104,14 +104,14 @@ fn run(self : VM) -> InterpretResult {
       OP_PRINT => println("\{self.pop()}")
       OP_POP => self.sp -= 1
       OP_DEFINE_GLOBAL => {
-        guard let StringVal(name) = self.read_constant()
+        guard self.read_constant() is StringVal(name)
         self.globals.set(name, self.peek(0))
         self.sp -= 1
       }
       OP_GET_GLOBAL => {
-        guard let StringVal(name) = self.read_constant()
+        guard self.read_constant() is StringVal(name)
         let value = if self.globals.contains(name) {
-          self.globals[name].unwrap()
+          self.globals.get(name).unwrap()
         } else {
           self.runtime_error("Undefined variable '\{name}'")
           return RuntimeError
@@ -119,7 +119,7 @@ fn run(self : VM) -> InterpretResult {
         self.push(value)
       }
       OP_SET_GLOBAL => {
-        guard let StringVal(name) = self.read_constant()
+        guard self.read_constant() is StringVal(name)
         if self.globals.contains(name) {
           self.globals.set(name, self.peek(0))
         } else {
@@ -163,14 +163,14 @@ fn run(self : VM) -> InterpretResult {
             return RuntimeError
           }
         }
-        guard let StringVal(name) = self.read_constant()
-        match instance.fields[name] {
+        guard self.read_constant() is StringVal(name)
+        match instance.fields.get(name) {
           Some(value) => {
             self.sp -= 1 // instance 
             self.push(value)
           }
           None =>
-            if not(self.bind_mthd(instance.class, name)) {
+            if not(self.bind_mthd(instance.clazz, name)) {
               return RuntimeError
             }
         }
@@ -183,15 +183,15 @@ fn run(self : VM) -> InterpretResult {
             return RuntimeError
           }
         }
-        guard let StringVal(field) = self.read_constant()
+        guard self.read_constant() is StringVal(field)
         instance.fields.set(field, self.peek(0))
         let value = self.pop()
         self.sp -= 1
         self.push(value)
       }
       OP_GET_SUPER => {
-        guard let StringVal(name) = self.read_constant()
-        guard let ClassVal(superclass) = self.pop()
+        guard self.read_constant() is StringVal(name)
+        guard self.pop() is ClassVal(superclass)
         if not(self.bind_mthd(superclass, name)) {
           return RuntimeError
         }
@@ -218,7 +218,7 @@ fn run(self : VM) -> InterpretResult {
         frame = self.frames[self.frame_count - 1].unwrap()
       }
       OP_CLOSURE => {
-        guard let FunctionVal(function) = self.read_constant()
+        guard self.read_constant() is FunctionVal(function)
         let closure = Closure::new(function)
         self.push(ClosureVal(closure))
         for i = 0; i < closure.upvalue_count; i = i + 1 {
@@ -236,15 +236,15 @@ fn run(self : VM) -> InterpretResult {
         self.sp -= 1
       }
       OP_CLASS => {
-        guard let StringVal(name) = self.read_constant()
+        guard self.read_constant() is StringVal(name)
         self.push(ClassVal(Class::new(name)))
       }
       OP_METHOD => {
-        guard let StringVal(name) = self.read_constant()
+        guard self.read_constant() is StringVal(name)
         self.define_method(name)
       }
       OP_INVOKE => {
-        guard let StringVal(mthd) = self.read_constant()
+        guard self.read_constant() is StringVal(mthd)
         let arg_count = self.read_byte()
         if not(self.invoke(mthd, arg_count)) {
           return RuntimeError
@@ -252,9 +252,9 @@ fn run(self : VM) -> InterpretResult {
         frame = self.frames[self.frame_count - 1].unwrap()
       }
       OP_SUPER_INVOKE => {
-        guard let StringVal(mthd) = self.read_constant()
+        guard self.read_constant() is StringVal(mthd)
         let arg_count = self.read_byte()
-        guard let ClassVal(superclass) = self.pop()
+        guard self.pop() is ClassVal(superclass)
         if not(self.invoke_from_class(superclass, mthd, arg_count)) {
           return RuntimeError
         }
@@ -268,7 +268,7 @@ fn run(self : VM) -> InterpretResult {
             return RuntimeError
           }
         }
-        guard let ClassVal(subclass) = self.peek(0)
+        guard self.peek(0) is ClassVal(subclass)
         for k, v in superclass.methods {
           subclass.methods[k] = v
         }
@@ -423,9 +423,9 @@ fn call_value(self : VM, callee : Value, arg_count : Int) -> Bool {
       self.stack[self.sp - arg_count - 1] = bound.receiver
       self.call_closure(bound.mthd, arg_count)
     }
-    ClassVal(class) => {
-      self.stack[self.sp - arg_count - 1] = InstanceVal(Instance::new(class))
-      match class.methods[self.init_string] {
+    ClassVal(clazz) => {
+      self.stack[self.sp - arg_count - 1] = InstanceVal(Instance::new(clazz))
+      match clazz.methods.get(self.init_string) {
         Some(ClosureVal(initializer)) =>
           return self.call_closure(initializer, arg_count)
         _ =>
@@ -465,23 +465,23 @@ fn invoke(self : VM, name : String, arg_count : Int) -> Bool {
       return false
     }
   }
-  match instance.fields[name] {
+  match instance.fields.get(name) {
     Some(value) => {
       self.stack[self.sp - arg_count - 1] = value
       self.call_value(value, arg_count)
     }
-    _ => self.invoke_from_class(instance.class, name, arg_count)
+    _ => self.invoke_from_class(instance.clazz, name, arg_count)
   }
 }
 
 ///|
 fn invoke_from_class(
   self : VM,
-  class : Class,
+  clazz : Class,
   name : String,
   arg_count : Int
 ) -> Bool {
-  match class.methods[name] {
+  match clazz.methods.get(name) {
     Some(ClosureVal(mthd)) => self.call_closure(mthd, arg_count)
     _ => {
       self.runtime_error("Undefined property '\{name}'")
@@ -491,15 +491,15 @@ fn invoke_from_class(
 }
 
 ///|
-fn bind_mthd(self : VM, class : Class, name : String) -> Bool {
-  let mthd_val = match class.methods[name] {
+fn bind_mthd(self : VM, clazz : Class, name : String) -> Bool {
+  let mthd_val = match clazz.methods.get(name) {
     Some(m) => m
     None => {
       self.runtime_error("Undefined property '\{name}'.")
       return false
     }
   }
-  guard let ClosureVal(mthd) = mthd_val
+  guard mthd_val is ClosureVal(mthd)
   let bound = BoundMethod::new(self.peek(0), mthd)
   self.sp -= 1
   self.push(BoundMethodVal(bound))
@@ -541,8 +541,8 @@ fn close_upvalues(self : VM, last : Int) -> Unit {
 ///|
 fn define_method(self : VM, name : String) -> Unit {
   let mthd = self.peek(0)
-  guard let ClassVal(class) = self.peek(1)
-  class.methods.set(name, mthd)
+  guard self.peek(1) is ClassVal(clazz)
+  clazz.methods.set(name, mthd)
   self.sp -= 1
 }
 

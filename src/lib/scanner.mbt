@@ -1,5 +1,5 @@
 ///|
-enum TokenKind {
+priv enum TokenKind {
   // Single-character tokens
   LeftParen
   RightParen
@@ -49,7 +49,7 @@ enum TokenKind {
 } derive(Eq, Hash, Show)
 
 ///|
-struct Token {
+priv struct Token {
   kind : TokenKind
   str : String
   start : Int
@@ -93,7 +93,7 @@ let keywords : Map[String, TokenKind] = {
 }
 
 ///|
-struct Scanner {
+priv struct Scanner {
   source : String
   mut start : Int
   mut cur : Int
@@ -146,7 +146,7 @@ fn Scanner::peek(self : Scanner) -> Char? {
   if self.is_at_end() {
     None
   } else {
-    Some(self.source[self.cur])
+    self.source.charcode_at(self.cur).to_char()
   }
 }
 
@@ -155,14 +155,14 @@ fn peek_next(self : Scanner) -> Char? {
   if self.is_at_end() {
     None
   } else {
-    Some(self.source[self.cur + 1])
+    self.source.charcode_at(self.cur + 1).to_char()
   }
 }
 
 ///|
 fn advance(self : Scanner) -> Char {
   self.cur += 1
-  self.source[self.cur - 1]
+  self.source.charcode_at(self.cur - 1).to_char().unwrap()
 }
 
 ///|

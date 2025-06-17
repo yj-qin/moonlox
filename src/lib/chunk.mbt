@@ -158,7 +158,7 @@ fn closure_instruction(
   buf.write_string(
     "\{name} \{constant_str} '\{self.constants.values[constant]}'",
   )
-  guard let FunctionVal(function) = self.constants.values[constant]
+  guard self.constants.values[constant] is FunctionVal(function) 
   for i = 0; i < function.upvalue_count; i = i + 1 {
     buf.write_char('\n')
     let is_local = if self.code[offset] == 0 { "local" } else { "upvalue" }
